@@ -1,6 +1,6 @@
 # Legacy Automated Distro Builder — Mint
 
-Automated Linux Mint installer for refurbished PCs. Plug in the USB, run one command, select the drives, walk away.
+Automated Linux Mint installer for legacy hardware. Plug in the USB, run one command, select the drives, walk away.
 
 **No Linux experience required to follow this guide.**
 
@@ -12,17 +12,18 @@ Automated Linux Mint installer for refurbished PCs. Plug in the USB, run one com
 - [What you'll need](#what-youll-need)
 - [First-time setup](#first-time-setup)
 - [Building the installer USB](#building-the-installer-usb)
-- [Installing on a donated PC](#installing-on-a-donated-pc)
+- [Installing on legacy hardware](#installing-on-legacy-hardware)
 - [Post-install setup](#post-install-internet-required)
 - [Adding or removing apps](#adding-or-removing-apps)
 - [Troubleshooting](#troubleshooting)
+- [How the scripts work](#how-the-scripts-work)
 - [Reference](#reference)
 
 ---
 
 ## What this does
 
-These scripts build a custom Linux Mint installer USB stick. You plug it into a donated PC, run one command, answer two questions about the hard drives, then leave it. The PC installs itself and reboots ready to hand over.
+These scripts build a custom Linux Mint installer USB stick. You plug it into a legacy machine, run one command, answer two questions about the hard drives, then leave it. The machine installs itself and reboots ready to use.
 
 ---
 
@@ -33,9 +34,9 @@ These scripts build a custom Linux Mint installer USB stick. You plug it into a 
 - A USB stick, **8 GB or larger** — it will be completely wiped
 - An internet connection
 
-**To install on a donated PC:**
+**To install on a legacy machine:**
 - The installer USB
-- The donated PC — no internet needed during install
+- The target machine — no internet needed during install
 
 ---
 
@@ -59,7 +60,13 @@ nix profile add nixpkgs#xorriso
 
 ### 2. Download the Linux Mint ISO
 
-Download from: https://www.linuxmint.com/download.php
+Download the ISO directly:
+
+```
+https://pub.linuxmint.io/stable/21.3/linuxmint-21.3-cinnamon-64bit.iso
+```
+
+Or choose a mirror closer to you from the official page: https://www.linuxmint.com/edition.php?id=311
 
 - Edition: **Cinnamon**
 - Version: **21.3 "Virginia"**
@@ -97,7 +104,7 @@ Label the USB and keep it safe.
 
 ---
 
-## Installing on a donated PC
+## Installing on legacy hardware
 
 ### Step 1 — BIOS settings
 
@@ -115,7 +122,7 @@ In the BIOS, set the following:
 
 Save and exit — usually `F10`.
 
-> **Why Legacy mode?** Donated PCs are typically 5+ years old. Legacy/CSM mode is far more reliable on older hardware than UEFI.
+> **Why Legacy mode?** Legacy hardware is typically 5+ years old. Legacy/CSM mode is far more reliable on older machines than UEFI.
 
 ---
 
@@ -184,7 +191,7 @@ After rebooting, the PC is ready. Default login:
 
 ## Post-install (internet required)
 
-Once handed over and connected to the internet, the recipient (or a tech) runs:
+Once connected to the internet, the end user (or a tech) runs:
 
 ```bash
 sudo bash ~/post-install.sh
@@ -211,7 +218,7 @@ This installs all apps, applies security settings, and reboots. It takes **10–
 
 **If an NVIDIA graphics card is detected**, the correct drivers are installed automatically.
 
-> The PC reboots automatically at the end. Remind the recipient to **change their password** after logging in.
+> The machine reboots automatically at the end. Remind the end user to **change their password** after logging in.
 
 ---
 
@@ -257,6 +264,66 @@ After editing `packages.txt`, rebuild and reflash the USB so the updated file is
 
 ---
 
+## How the scripts work
+
+### build-usb.sh
+
+`build-usb.sh` takes the official Linux Mint ISO and injects the three local files (`setup.sh`, `post-install.sh`, `packages.txt`) into it, producing a new custom ISO.
+
+It uses **xorriso** to do this non-destructively — the original Mint ISO is left untouched. The custom ISO is identical to the official one except for the three added files, which land in the root of the disc (`/cdrom/` when booted). The original boot configuration is preserved exactly using `-boot_image any replay`, so the USB boots the same way a standard Mint USB would.
+
+Any previous output ISO is deleted before building, so you always know the result is fresh.
+
+Output filename format: `mint-reuse-YYYYMMDD.iso`
+
+`flash-usb.sh` is a wrapper that calls `build-usb.sh` and then immediately flashes the result to the USB with `dd`. It also validates that the output ISO is at least 2 GB before flashing, catching silent build failures before they produce a broken USB.
+
+---
+
+### setup.sh
+
+`setup.sh` runs on the live Mint desktop (booted from the USB) and fully automates the installation. Here is what it does in order:
+
+**1. Drive detection**
+
+It scans for all internal block devices — SATA drives (`sda`, `sdb`...), NVMe drives (`nvme0n1`...), and virtual drives (`vda`...). For each one it reads the size, model, and whether it is an SSD or HDD directly from the kernel (`/sys/block/`), and displays them in a numbered list.
+
+**2. Storage layout**
+
+If only one drive is found, it is used automatically. If multiple drives are present, the technician chooses between:
+
+- **Single drive** — everything on one disk
+- **Dual drive** — OS on one disk (typically an SSD), user files on a separate disk (typically an HDD)
+
+Drive selection uses a global variable (`SELECTED_DISK`) rather than command substitution (`$(...)`). This is intentional — command substitution captures all stdout, which would corrupt the drive name by including menu text.
+
+**3. Dual drive preparation**
+
+If dual drive is chosen, the script partitions and formats the second drive as ext4 before the installer runs. It records the partition's UUID so it can be written into `/etc/fstab` by the installer, mounting it automatically as `/home` on every boot.
+
+**4. Preseed generation**
+
+The script generates a debconf preseed file at `/tmp/reuse-preseed.cfg`. This file contains every answer the Ubiquity installer would normally ask for interactively:
+
+- Locale, language, keyboard layout (UK English)
+- Timezone (Europe/London)
+- Hostname (`mintpc`), default user (`user`), default password (`changeme`)
+- Disk partitioning (wipes the target drive, single partition, MBR/msdos label)
+- GRUB bootloader target
+- A `late_command` that copies `post-install.sh` and `packages.txt` from the USB into the newly installed system's home directory
+
+**5. Automated install**
+
+The preseed is loaded with `debconf-set-selections` and Ubiquity is launched in fully non-interactive mode:
+
+```bash
+UBIQUITY_AUTOMATIC=1 UBIQUITY_FRONTEND=noninteractive ubiquity --automatic
+```
+
+No GUI appears. The install runs entirely in the terminal and the machine reboots itself when complete.
+
+---
+
 ## Reference
 
 ### Default credentials
@@ -276,7 +343,7 @@ After editing `packages.txt`, rebuild and reflash the USB so the updated file is
 | `setup.sh` | Runs on the live desktop — selects drives and installs Mint |
 | `build-usb.sh` | Injects scripts into a Mint ISO |
 | `flash-usb.sh` | Builds ISO and flashes to USB in one step |
-| `post-install.sh` | Installs apps and hardens the system after handover |
+| `post-install.sh` | Installs apps and hardens the system after deployment |
 | `packages.txt` | App list — the only file most techs need to edit |
 
 ### Updating the scripts
@@ -296,4 +363,3 @@ If upgrading to a newer version, update `MINT_VERSION` and `LAST_EDIT` at the to
 ---
 
 *Maintained by rhyejam*
-# Legacy-Automated-Disto-Builder---Mint-
