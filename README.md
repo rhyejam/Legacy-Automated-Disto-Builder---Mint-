@@ -156,9 +156,9 @@ The script shows the drives it has found. Example:
 ```
 Drives found on this machine:
 
-  1)  /dev/nvme0n1   SSD   238.5G   SAMSUNG MZVLB256
-  2)  /dev/sda       HDD   931.5G   WDC WD10JPVX
-  3)  /dev/sdb       HDD    14.6G   ProductCode
+  1)  /dev/nvme0n1   SSD   238.5G   Samsung SSD
+  2)  /dev/sda       HDD   931.5G   Western Digital HDD
+  3)  /dev/sdb       HDD    14.6G   Mint Installer USB
 
 How should storage be configured on this machine?
 
@@ -172,7 +172,7 @@ How should storage be configured on this machine?
 - Select the SSD number when asked for the operating system drive
 - Select the HDD number when asked for the user files drive
 
-> **Do not select the USB stick.** It will appear as a small drive (14–16 GB) labelled something like `ProductCode`. The internal drives will be larger.
+> **Do not select the USB stick.** It will appear as a small drive (14–16 GB) labelled `Mint Installer USB`. The internal drives will be larger.
 
 ---
 
