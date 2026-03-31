@@ -1,0 +1,32 @@
+# =============================================================================
+# York IT Reuse - Package List
+# Add one package name per line.
+# Lines starting with # are comments and are ignored.
+# Run post-install.sh after connecting the PC to the internet.
+# =============================================================================
+
+# Web browsers
+chromium-browser
+
+# Office suite
+libreoffice
+
+# Media playback
+vlc
+
+# Image editing
+gimp
+
+# Email client
+thunderbird
+
+# Disk management utility
+gnome-disk-utility
+
+# Fonts
+fonts-liberation
+font-manager
+
+# Uncomment as needed:
+# kdenlive
+# obs-studio

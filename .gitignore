@@ -1,0 +1,5 @@
+# Built ISOs — too large for GitHub (rebuild with flash-usb.sh)
+mint-reuse-*.iso
+
+# Downloaded source ISOs — get from linuxmint.com
+linuxmint-*.iso
