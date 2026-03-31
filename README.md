@@ -1,4 +1,4 @@
-# York IT Reuse — Mint Install Automation
+# Legacy Automated Distro Builder — Mint
 
 Automated Linux Mint installer for refurbished PCs. Plug in the USB, run one command, select the drives, walk away.
 
@@ -70,10 +70,10 @@ Save it to your Downloads folder. The file is around 2.9 GB.
 ### 3. Get the scripts
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/reuse-install.git ~/reuse-install
+git clone https://github.com/rhyejam/ladb-mint.git ~/ladb-mint
 ```
 
-Or download the ZIP from GitHub, extract it, and place the folder at `~/reuse-install`.
+Or download the ZIP from GitHub, extract it, and place the folder at `~/ladb-mint`.
 
 ---
 
@@ -86,7 +86,7 @@ Or download the ZIP from GitHub, extract it, and place the folder at `~/reuse-in
 3. Run:
 
 ```bash
-sudo -E bash ~/reuse-install/flash-usb.sh ~/Downloads/linuxmint-21.3-cinnamon-64bit.iso
+sudo -E bash ~/ladb-mint/flash-usb.sh ~/Downloads/linuxmint-21.3-cinnamon-64bit.iso
 ```
 
 4. Type `YES` when prompted
@@ -284,7 +284,7 @@ After editing `packages.txt`, rebuild and reflash the USB so the updated file is
 1. Edit the relevant file
 2. Rebuild and flash the USB:
    ```bash
-   sudo -E bash ~/reuse-install/flash-usb.sh ~/Downloads/linuxmint-21.3-cinnamon-64bit.iso
+   sudo -E bash ~/ladb-mint/flash-usb.sh ~/Downloads/linuxmint-21.3-cinnamon-64bit.iso
    ```
 3. Commit and push to GitHub
 
@@ -295,4 +295,5 @@ If upgrading to a newer version, update `MINT_VERSION` and `LAST_EDIT` at the to
 
 ---
 
-*Maintained by Miles James — miljam90@proton.me — York IT Reuse*
+*Maintained by rhyejam*
+# Legacy-Automated-Disto-Builder---Mint-
